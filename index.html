@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>جدول الرحلات والحضور</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f4c5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="الرحلات">
+<meta name="description" content="تطبيق إدارة جدول الرحلات والمأموريات والحضور — يعمل بدون إنترنت">
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f0f4f7;
+  --card: #ffffff;
+  --ink: #1a2332;
+  --mut: #5a6b7a;
+  --line: #d8e0e8;
+  --work: #d4f5ea;
+  --workink: #0a5c48;
+  --mis: #2563eb;
+  --misink: #ffffff;
+  --rest: #fef3c7;
+  --restink: #92400e;
+  --acc: #0f4c5c;
+  --acc2: #167a8c;
+  --accink: #ffffff;
+  --na: #e9eef2;
+  --bad: #dc2626;
+  --shadow: 0 4px 20px rgba(15,76,92,.08);
+  --radius: 14px;
+  --font: 'Segoe UI', Tahoma, 'Noto Sans Arabic', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1419;
+    --card: #162028;
+    --ink: #e8eef4;
+    --mut: #8fa0b0;
+    --line: #2a3744;
+    --work: #0f3d34;
+    --workink: #7ee0c4;
+    --mis: #3b82f6;
+    --misink: #fff;
+    --rest: #3d2e0a;
+    --restink: #fcd34d;
+    --acc: #4db8cc;
+    --acc2: #3a9aab;
+    --accink: #0a1f26;
+    --na: #1c2730;
+    --bad: #f87171;
+    --shadow: 0 4px 24px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  padding: max(14px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+  min-height: 100dvh;
+}
+.wrap { max-width: 820px; margin: 0 auto; }
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 0 14px;
+}
+h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 10px;
+  scrollbar-width: none;
+}
+.row::-webkit-scrollbar { display: none; }
+button, input, select { font: inherit; color: inherit; }
+.chip {
+  flex: 0 0 auto;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.chip:hover { border-color: var(--acc); }
+.chip[aria-pressed="true"] {
+  background: var(--acc);
+  color: var(--accink);
+  border-color: var(--acc);
+  box-shadow: 0 2px 10px rgba(15,76,92,.25);
+}
+.nav .chip { border-radius: 12px; padding: 9px 16px; }
+.sm .chip { padding: 7px 13px; font-size: .9rem; border-radius: 10px; }
+.btn {
+  border: none;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: var(--accink);
+  border-radius: 12px;
+  padding: 11px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 3px 12px rgba(15,76,92,.2);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(15,76,92,.28); }
+.btn:active { transform: translateY(0); }
+.btn.o {
+  background: transparent;
+  color: var(--acc);
+  border: 1.5px solid var(--acc);
+  box-shadow: none;
+}
+.btn.d {
+  background: transparent;
+  border: 1.5px solid var(--bad);
+  color: var(--bad);
+  box-shadow: none;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: var(--shadow);
+}
+h2 { font-size: 1.1rem; margin-bottom: 12px; font-weight: 700; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat {
+  border-radius: 12px;
+  padding: 14px 6px;
+  text-align: center;
+  transition: transform .15s;
+}
+.stat:hover { transform: scale(1.02); }
+.stat b { display: block; font-size: 2rem; line-height: 1.15; font-weight: 800; }
+.stat span { font-size: .82rem; opacity: .9; }
+.s-rest { background: var(--rest); color: var(--restink); }
+.s-work { background: var(--work); color: var(--workink); }
+.s-mis { background: var(--mis); color: var(--misink); }
+.sum, .small { color: var(--mut); font-size: .88rem; }
+.sum { margin-top: 12px; line-height: 1.6; }
+.item {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.item:first-of-type { border-top: 0; }
+.tag {
+  font-size: .78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.t-dep { background: var(--work); color: var(--workink); }
+.t-ret { background: var(--rest); color: var(--restink); }
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.cal div {
+  text-align: center;
+  border-radius: 10px;
+  padding: 9px 0;
+  font-size: .92rem;
+  font-weight: 500;
+}
+.cal .h { font-size: .7rem; color: var(--mut); padding: 4px 0; font-weight: 600; }
+.c-work { background: var(--work); color: var(--workink); }
+.c-rest { background: var(--rest); color: var(--restink); }
+.c-mis { background: var(--mis); color: var(--misink); font-weight: 700; }
+.c-na { background: var(--na); color: var(--mut); }
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: .82rem;
+  color: var(--mut);
+}
+.legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  margin-inline-end: 5px;
+  vertical-align: -1px;
+}
+.tw { overflow-x: auto; border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th, td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+th { font-weight: 700; color: var(--mut); font-size: .85rem; }
+tfoot td { font-weight: 800; border-bottom: 0; background: var(--bg); }
+.badge {
+  display: inline-block;
+  border-radius: 10px;
+  padding: 2px 11px;
+  color: #fff;
+  font-weight: 700;
+  font-size: .82rem;
+}
+.b1 { background: #c62828; }
+.b2 { background: #c25b00; }
+.b3 { background: #2e7d32; }
+tr.now td { background: var(--work); }
+.f {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+.f label {
+  display: grid;
+  gap: 5px;
+  font-size: .88rem;
+  color: var(--mut);
+  font-weight: 500;
+}
+.f .w { grid-column: 1 / -1; }
+input, select {
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  transition: border-color .15s;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+.acts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.bad { color: var(--bad); font-weight: 700; }
+dialog {
+  margin: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 20px;
+  width: min(94vw, 440px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+dialog::backdrop { background: rgba(0,0,0,.5); backdrop-filter: blur(4px); }
+#toast {
+  position: fixed;
+  inset-inline: 0;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  text-align: center;
+  pointer-events: none;
+  z-index: 100;
+}
+#toast span {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 11px 20px;
+  border-radius: 24px;
+  font-size: .92rem;
+  font-weight: 600;
+  display: inline-block;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  animation: toastIn .25s ease;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+details {
+  margin-top: 10px;
+  color: var(--mut);
+  font-size: .88rem;
+}
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 6px 0;
+}
+pre.report {
+  white-space: pre-wrap;
+  font: inherit;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px;
+  line-height: 1.9;
+  border: 1px solid var(--line);
+}
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--mut);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  margin-top: 8px;
+}
+.dropzone:hover, .dropzone.drag {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, transparent);
+}
+.dropzone strong { color: var(--acc); display: block; margin-bottom: 6px; }
+.hero-stat {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  background: var(--work);
+  color: var(--workink);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>جدول الرحلات والحضور</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="offline-badge" id="offb" hidden>● بدون إنترنت</span>
+      <button class="btn o" id="inst" hidden>تثبيت التطبيق</button>
+    </div>
+  </div>
+  <div class="row" id="trips" role="group" aria-label="رقم الرحلة"></div>
+  <div class="row nav" id="nav"></div>
+  <div id="out"></div>
+</div>
+
+<dialog id="dlg">
+  <h2 id="dt"></h2>
+  <div class="f">
+    <label class="w">رقم الرحلة
+      <select id="et"><option>1</option><option>2</option><option>3</option></select>
+    </label>
+    <label>تاريخ الذهاب<input type="date" id="ed"></label>
+    <label>تاريخ العودة<input type="date" id="er"></label>
+  </div>
+  <p class="bad small" id="eerr"></p>
+  <div class="acts">
+    <button class="btn" id="esave">حفظ</button>
+    <button class="btn o" id="ecancel">إلغاء</button>
+    <button class="btn d" id="edel">حذف</button>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<input type="file" id="imp" accept=".json,application/json,.csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+<input type="file" id="impExcel" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+
+<script>
+/* ========== البيانات الأساسية (محدثة من ملف الإكسل) ========== */
+const BASE = [
+  [1,"05/10/2026","24/10/2026"],[2,"14/10/2026","02/11/2026"],[3,"23/10/2026","11/11/2026"],
+  [1,"01/11/2026","20/11/2026"],[2,"10/11/2026","29/11/2026"],[3,"19/11/2026","08/12/2026"],
+  [1,"28/11/2026","17/12/2026"],[2,"07/12/2026","26/12/2026"],[3,"16/12/2026","04/01/2027"],
+  [1,"25/12/2026","13/01/2027"],[2,"03/01/2027","22/01/2027"],[3,"12/01/2027","31/01/2027"],
+  [1,"21/01/2027","09/02/2027"],[2,"30/01/2027","18/02/2027"],[3,"08/02/2027","27/02/2027"],
+  [1,"17/02/2027","08/03/2027"],[2,"26/02/2027","17/03/2027"],[3,"07/03/2027","26/03/2027"],
+  [1,"16/03/2027","04/04/2027"],[2,"25/03/2027","13/04/2027"],[3,"03/04/2027","22/04/2027"],
+  [1,"12/04/2027","01/05/2027"],[2,"21/04/2027","10/05/2027"],[3,"30/04/2027","19/05/2027"],
+  [1,"09/05/2027","28/05/2027"],[2,"18/05/2027","06/06/2027"],[3,"27/05/2027","15/06/2027"],
+  [1,"05/06/2027","24/06/2027"],[2,"14/06/2027","03/07/2027"],[3,"23/06/2027","12/07/2027"],
+  [1,"02/07/2027","21/07/2027"],[2,"11/07/2027","30/07/2027"],[3,"20/07/2027","08/08/2027"],
+  [1,"29/07/2027","17/08/2027"],[2,"07/08/2027","26/08/2027"],[3,"16/08/2027","04/09/2027"],
+  [1,"25/08/2027","13/09/2027"],[2,"03/09/2027","22/09/2027"],[3,"12/09/2027","01/10/2027"],
+  [1,"21/09/2027","10/10/2027"],[2,"30/09/2027","19/10/2027"],[3,"09/10/2027","28/10/2027"],
+  [1,"18/10/2027","06/11/2027"],[2,"27/10/2027","15/11/2027"],[3,"05/11/2027","24/11/2027"],
+  [1,"14/11/2027","03/12/2027"],[2,"23/11/2027","12/12/2027"],[3,"02/12/2027","21/12/2027"],
+  [1,"11/12/2027","30/12/2027"],[2,"20/12/2027","08/01/2028"],[3,"29/12/2027","17/01/2028"],
+  [1,"07/01/2028","26/01/2028"],[2,"16/01/2028","04/02/2028"],[3,"25/01/2028","13/02/2028"],
+  [1,"03/02/2028","22/02/2028"],[2,"12/02/2028","02/03/2028"],[3,"21/02/2028","11/03/2028"],
+  [1,"01/03/2028","20/03/2028"],[2,"10/03/2028","29/03/2028"],[3,"19/03/2028","07/04/2028"],
+  [1,"28/03/2028","16/04/2028"],[2,"06/04/2028","25/04/2028"],[3,"15/04/2028","04/05/2028"],
+  [1,"24/04/2028","13/05/2028"],[2,"03/05/2028","22/05/2028"],[3,"12/05/2028","31/05/2028"],
+  [1,"21/05/2028","09/06/2028"],[2,"30/05/2028","18/06/2028"],[3,"08/06/2028","27/06/2028"],
+  [1,"17/06/2028","06/07/2028"],[2,"26/06/2028","15/07/2028"],[3,"05/07/2028","24/07/2028"],
+  [1,"14/07/2028","02/08/2028"],[2,"23/07/2028","11/08/2028"]
+];
+
+const DN = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const MN = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+const REST = 7, KEY = 'trips.v2', HK = 'trips.hist.v2', SK = 'trips.sel.v2';
+
+const $ = s => document.querySelector(s);
+const P = s => {
+  const parts = s.split(/[\/\-\.]/).map(Number);
+  // support DD/MM/YYYY or YYYY-MM-DD
+  let d, m, y;
+  if (parts[0] > 31) { y = parts[0]; m = parts[1]; d = parts[2]; }
+  else { d = parts[0]; m = parts[1]; y = parts[2]; }
+  return Date.UTC(y, m - 1, d) / 864e5;
+};
+const D = n => new Date(n * 864e5);
+const iso = n => D(n).toISOString().slice(0, 10);
+const fromIso = s => {
+  const [c, b, a] = s.split('-').map(Number);
+  return Date.UTC(c, b - 1, a) / 864e5;
+};
+const f2 = n => {
+  const x = D(n);
+  return String(x.getUTCDate()).padStart(2, '0') + '/' +
+         String(x.getUTCMonth() + 1).padStart(2, '0') + '/' +
+         x.getUTCFullYear();
+};
+const fs = n => {
+  const x = D(n);
+  return x.getUTCDate() + ' ' + MN[x.getUTCMonth()];
+};
+const dn = n => DN[D(n).getUTCDay()];
+const now = new Date();
+const TODAY = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 864e5;
+const mk = n => {
+  const x = D(n);
+  return x.getUTCFullYear() * 12 + x.getUTCMonth();
+};
+
+let incl = false, rows = [], hist = [], trip = 1, view = 'rep', cur = null, flt = 'all', editId = 0;
+let sh = { scope: 'me', from: iso(TODAY), dir: 1, n: 1 };
+
+function reset() {
+  rows = BASE.map((r, i) => ({ id: i + 1, t: r[0], d: P(r[1]), r: P(r[2]) }));
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (Array.isArray(s) && s.length) rows = s;
+  } catch (e) {}
+  if (!rows.length) reset();
+  try { hist = JSON.parse(localStorage.getItem(HK)) || []; } catch (e) { hist = []; }
+  trip = +(localStorage.getItem(SK) || 1) || 1;
+}
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(rows));
+    localStorage.setItem(HK, JSON.stringify(hist));
+    localStorage.setItem(SK, trip);
+  } catch (e) {}
+}
+function snap() {
+  hist.push(JSON.stringify(rows));
+  if (hist.length > 25) hist.shift();
+}
+function toast(m) {
+  $('#toast').innerHTML = '<span>' + m + '</span>';
+  setTimeout(() => $('#toast').innerHTML = '', 2800);
+}
+
+function info(t) {
+  const rs = rows.filter(x => x.t === t).sort((a, b) => a.d - b.d);
+  const ev = {}, rest = [];
+  rs.forEach((x, i) => {
+    ev[x.d] = 'dep';
+    ev[x.r] = 'ret';
+    const nx = rs[i + 1];
+    const end = nx ? nx.d - 1 : x.r + REST;
+    if (end > x.r) rest.push([x.r + 1, end, !nx]);
+  });
+  return {
+    rs, ev, rest,
+    from: rs.length ? rs[0].d : 0,
+    to: rs.length ? rs[rs.length - 1].r + REST : -1
+  };
+}
+function mrep(t, k) {
+  const I = info(t);
+  const y = Math.floor(k / 12), m = k % 12;
+  const first = Date.UTC(y, m, 1) / 864e5;
+  const n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const days = [];
+  let r = 0, c = 0, ms = [];
+  for (let i = 0; i < n; i++) {
+    const d = first + i;
+    let q = 'na';
+    if (d >= I.from && d <= I.to) {
+      c++;
+      if (I.ev[d]) { q = 'mis'; ms.push({ d, k: I.ev[d] }); }
+      else if (I.rest.some(x => d >= x[0] && d <= x[1])) { q = 'rest'; r++; }
+      else q = 'work';
+    }
+    days.push({ d, q, i: i + 1 });
+  }
+  const rg = I.rest.map(x => [Math.max(x[0], first), Math.min(x[1], first + n - 1), x])
+    .filter(x => x[0] <= x[1]);
+  return { n, c, days, rest: r, work: c - r, mis: ms.length, ms, rg, first, last: first + n - 1 };
+}
+function mlist(t) {
+  const I = info(t), a = [];
+  if (!I.rs.length) return a;
+  for (let k = mk(I.from); k <= mk(I.to); k++) a.push(k);
+  return a;
+}
+
+function rtext(R, k) {
+  let t = `**مأموريات شهر ${MN[k % 12]}**\n\n` +
+    (R.ms.map(e => `يوم ${D(e.d).getUTCDate()}  مأمورية  (من ${e.k === 'dep' ? 'القاهرة العوينات' : 'العوينات القاهرة'})`).join('\n') || 'لا توجد مأموريات');
+  if (incl) t += `\n\nعدد أيام الراحة لهذا الشهر هي ${R.rest} أيام و حضور ${R.work} يوم و ${R.mis} مأموريات\nحيث المأموريات تعتبر حضور`;
+  return t;
+}
+function copyTxt(t) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  return new Promise((ok, no) => {
+    const a = document.createElement('textarea');
+    a.value = t;
+    document.body.appendChild(a);
+    a.select();
+    try { document.execCommand('copy') ? ok() : no(); } catch (e) { no(); }
+    a.remove();
+  });
+}
+
+/* ========== Views ========== */
+function vRep() {
+  const L = mlist(trip);
+  if (!L.length) return '<div class="card">لا توجد بيانات لهذه الرحلة.</div>';
+  if (cur !== 'tot' && !L.includes(cur)) cur = L.includes(mk(TODAY)) ? mk(TODAY) : L[0];
+  const tabs = '<div class="row sm">' + L.map(k =>
+    `<button class="chip" aria-pressed="${cur === k}" data-k="${k}">${MN[k % 12]} ${String(Math.floor(k / 12)).slice(2)}</button>`
+  ).join('') + `<button class="chip" aria-pressed="${cur === 'tot'}" data-k="tot">الإجمالي</button></div>`;
+
+  if (cur === 'tot') {
+    let a = 0, b = 0, c = 0, t = 0;
+    const tr = L.map(k => {
+      const R = mrep(trip, k);
+      a += R.rest; b += R.work; c += R.mis; t += R.c;
+      return `<tr><td>${MN[k % 12]} ${Math.floor(k / 12)}</td><td>${R.rest}</td><td>${R.work}</td><td>${R.mis}</td><td>${R.c}</td></tr>`;
+    }).join('');
+    return tabs + `<div class="card"><h2>رحلة ${trip} — الإجمالي</h2>
+      <div class="tw"><table>
+        <thead><tr><th>الشهر</th><th>راحة</th><th>حضور</th><th>مأموريات</th><th>أيام مجدولة</th></tr></thead>
+        <tbody>${tr}</tbody>
+        <tfoot><tr><td>المجموع</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${t}</td></tr></tfoot>
+      </table></div>
+      <p class="sum">المأموريات محسوبة ضمن الحضور. الأيام غير المجدولة (قبل أول ذهاب أو بعد آخر راحة) لا تُحسب.</p></div>`;
+  }
+
+  const R = mrep(trip, cur);
+  const T = `${MN[cur % 12]} ${Math.floor(cur / 12)}`;
+  const ml = R.ms.map(e => {
+    const dep = e.k === 'dep';
+    return `<div class="item"><div><b>يوم ${D(e.d).getUTCDate()}</b> — ${dn(e.d)}
+      <div class="small">مأمورية (من ${dep ? 'القاهرة إلى العوينات' : 'العوينات إلى القاهرة'})</div></div>
+      <span class="tag ${dep ? 't-dep' : 't-ret'}">${dep ? 'ذهاب' : 'عودة'}</span></div>`;
+  }).join('') || '<p class="small">لا توجد مأموريات</p>';
+
+  const rl = R.rg.map(([a, b, x]) => {
+    const cut = x[0] < a || x[1] > b;
+    return `<div class="item"><div><b>من ${fs(a)} إلى ${fs(b)}</b>
+      <div class="small">${b - a + 1} يوم${cut ? ` (الراحة كاملة ${x[1] - x[0] + 1} يوم: ${fs(x[0])} – ${fs(x[1])})` : ''}</div></div>
+      <span class="small">${x[1] <= R.last && !x[2] ? 'العودة للعمل ' + fs(x[1] + 1) : ''}</span></div>`;
+  }).join('') || '<p class="small">لا توجد أيام راحة</p>';
+
+  const cal = DN.map(d => `<div class="h">${d.slice(2)}</div>`).join('') +
+    '<div></div>'.repeat(D(R.first).getUTCDay()) +
+    R.days.map(x => `<div class="c-${x.q}">${x.i}</div>`).join('');
+
+  return tabs + `<div class="card"><h2>رحلة ${trip} — ${T}</h2>
+    <div class="stats">
+      <div class="stat s-rest"><b>${R.rest}</b><span>أيام الراحة</span></div>
+      <div class="stat s-work"><b>${R.work}</b><span>أيام الحضور</span></div>
+      <div class="stat s-mis"><b>${R.mis}</b><span>مأموريات</span></div>
+    </div>
+    <p class="sum">عدد أيام الراحة لهذا الشهر ${R.rest} أيام وحضور ${R.work} يوم و${R.mis} مأموريات، حيث المأموريات تعتبر حضور.
+      (${R.rest} + ${R.work} = ${R.c} يوم${R.c < R.n ? ` من ${R.n}؛ ${R.n - R.c} يوم خارج الجدول` : ''})</p></div>
+    <div class="card"><h2>تقرير للإرسال</h2>
+      <pre class="report" id="rp">${rtext(R, cur)}</pre>
+      <div class="acts">
+        <button class="btn" id="cp">نسخ التقرير</button>
+        <button class="btn o" id="shr">مشاركة</button>
+        <button class="chip" data-inc="1" aria-pressed="${incl}">إضافة ملخص الراحة والحضور</button>
+      </div></div>
+    <div class="card"><h2>المأموريات</h2>${ml}</div>
+    <div class="card"><h2>فترات الراحة</h2>${rl}</div>
+    <div class="card"><h2>تقويم الشهر</h2>
+      <div class="cal">${cal}</div>
+      <div class="legend">
+        <span><i style="background:var(--work)"></i>حضور</span>
+        <span><i style="background:var(--mis)"></i>مأمورية</span>
+        <span><i style="background:var(--rest)"></i>راحة</span>
+        <span><i style="background:var(--na)"></i>غير مجدول</span>
+      </div></div>`;
+}
+
+function vTbl() {
+  const l = rows.filter(x => flt === 'all' || x.t === +flt).sort((a, b) => a.d - b.d || a.t - b.t);
+  return `<div class="row sm">${['all', 1, 2, 3].map(f =>
+    `<button class="chip" aria-pressed="${flt == f}" data-f="${f}">${f === 'all' ? 'الكل' : 'رحلة ' + f}</button>`
+  ).join('')}</div>
+  <div class="card">
+    <div class="tw"><table>
+      <thead><tr><th>الرحلة</th><th>الذهاب</th><th>اليوم</th><th>العودة</th><th>اليوم</th><th></th></tr></thead>
+      <tbody>${l.map(x =>
+        `<tr class="${TODAY >= x.d && TODAY <= x.r ? 'now' : ''}">
+          <td><span class="badge b${x.t}">${x.t}</span></td>
+          <td>${f2(x.d)}</td><td>${dn(x.d)}</td>
+          <td>${f2(x.r)}</td><td>${dn(x.r)}</td>
+          <td><button class="chip" data-e="${x.id}" aria-label="تعديل">✎</button></td>
+        </tr>`
+      ).join('')}</tbody>
+    </table></div>
+    <div class="acts"><button class="btn" data-e="0">إضافة رحلة</button></div>
+    <p class="sum">${l.length} رحلة. الصف المظلل هو الرحلة الجارية اليوم.</p>
+  </div>`;
+}
+
+function vTrip() {
+  const I = info(trip);
+  if (!I.rs.length) return '<div class="card">لا توجد بيانات.</div>';
+  const up = I.rs.find(x => x.r >= TODAY);
+  const len = I.rs.reduce((s, x) => s + x.r - x.d + 1, 0);
+  const cards = I.rs.map((x, i) => {
+    const nx = I.rs[i + 1];
+    const re = nx ? nx.d - 1 : x.r + REST;
+    const cu = TODAY >= x.d && TODAY <= re;
+    return `<div class="card" ${cu ? 'style="border-color:var(--acc);border-width:2px"' : ''}>
+      <div class="item"><b>الدورة ${i + 1}${cu ? ' — الجارية الآن' : ''}</b>
+        <button class="chip" data-e="${x.id}">تعديل ✎</button></div>
+      <div class="item"><span>الذهاب (قاهرة ← عوينات)</span><b>${f2(x.d)} — ${dn(x.d)}</b></div>
+      <div class="item"><span>العودة (عوينات ← قاهرة)</span><b>${f2(x.r)} — ${dn(x.r)}</b></div>
+      <div class="item"><span>مدة الدورة</span><b>${x.r - x.d + 1} يوم</b></div>
+      <div class="item"><span>الراحة</span><b>${re > x.r ? `${fs(x.r + 1)} – ${fs(re)} (${re - x.r} يوم)` : '—'}</b></div>
+      <div class="item"><span>الذهاب التالي</span><b>${nx ? f2(nx.d) + ' — ' + dn(nx.d) : 'غير مجدول'}</b></div>
+    </div>`;
+  }).join('');
+  return `<div class="card"><h2>بيانات رحلة ${trip}</h2>
+    <div class="stats">
+      <div class="stat s-work"><b>${I.rs.length}</b><span>دورات</span></div>
+      <div class="stat s-mis"><b>${I.rs.length * 2}</b><span>مأموريات</span></div>
+      <div class="stat s-rest"><b>${len}</b><span>أيام داخل الدورات</span></div>
+    </div>
+    <p class="sum">من ${f2(I.from)} إلى ${f2(I.to)}${up ? ` — القادمة/الجارية: ذهاب ${f2(up.d)} وعودة ${f2(up.r)}` : ''}</p>
+    <div class="acts"><button class="btn o" id="ext">إضافة دورة تالية بنفس النمط</button></div>
+  </div>${cards}`;
+}
+
+function plan() {
+  const from = fromIso(sh.from);
+  const n = sh.dir * sh.n;
+  return rows.filter(x => sh.scope === 'all' || x.t === trip)
+    .map(x => ({
+      x,
+      d: x.d >= from ? x.d + n : x.d,
+      r: x.r >= from ? x.r + n : x.r
+    })).filter(p => p.d !== p.x.d || p.r !== p.x.r);
+}
+
+function vShift() {
+  const p = plan();
+  const bad = p.some(q => q.r < q.d);
+  return `<div class="card"><h2>ترحيل الجدول</h2>
+    <p class="small">كل تاريخ ذهاب أو عودة يقع في اليوم المحدد أو بعده يُرحَّل بعدد الأيام المطلوب. التواريخ السابقة تبقى كما هي.</p>
+    <div class="f" style="margin-top:12px">
+      <label class="w">النطاق
+        <select id="s-sc">
+          <option value="me" ${sh.scope === 'me' ? 'selected' : ''}>رحلة ${trip} فقط</option>
+          <option value="all" ${sh.scope === 'all' ? 'selected' : ''}>كل الرحلات</option>
+        </select>
+      </label>
+      <label>من تاريخ (يوم التعديل)<input type="date" id="s-fr" value="${sh.from}"></label>
+      <label>عدد الأيام<input type="number" id="s-n" min="1" max="365" value="${sh.n}"></label>
+      <label class="w">الاتجاه
+        <select id="s-dr">
+          <option value="1" ${sh.dir === 1 ? 'selected' : ''}>تأخير (ترحيل للأمام)</option>
+          <option value="-1" ${sh.dir === -1 ? 'selected' : ''}>تقديم (ترحيل للخلف)</option>
+        </select>
+      </label>
+    </div>
+    <h2 style="margin-top:16px">معاينة (${p.length} تعديل)</h2>
+    ${p.map(q => `<div class="item">
+      <span><span class="badge b${q.x.t}">${q.x.t}</span> ${f2(q.x.d)} ← ${f2(q.x.r)}</span>
+      <b ${q.r < q.d ? 'class="bad"' : ''}>${f2(q.d)} ← ${f2(q.r)}</b>
+    </div>`).join('') || '<p class="small">لا تغيير بهذه الإعدادات.</p>'}
+    ${bad ? '<p class="bad small">تعديل يجعل العودة قبل الذهاب؛ غيّر الإعدادات.</p>' : ''}
+    <div class="acts">
+      <button class="btn" id="apply" ${p.length && !bad ? '' : 'disabled'}>تطبيق الترحيل</button>
+      <button class="btn o" id="undo" ${hist.length ? '' : 'disabled'}>تراجع (${hist.length})</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>النسخ الاحتياطي والاستيراد</h2>
+    <p class="small" style="margin-bottom:10px">يمكنك تصدير كل البيانات أو استيراد ملف JSON أو CSV أو Excel يحتوي على الأعمدة: رقم الرحلة، تاريخ الذهاب، تاريخ العودة.</p>
+    <div class="dropzone" id="dz">
+      <strong>اسحب ملفًا هنا أو اضغط للاختيار</strong>
+      JSON / CSV / Excel (.xlsx)
+    </div>
+    <div class="acts" style="margin-top:14px">
+      <button class="btn o" id="exp">تصدير JSON</button>
+      <button class="btn o" id="expCsv">تصدير CSV</button>
+      <button class="btn d" id="rst">استرجاع الجدول الأصلي</button>
+    </div>
+    <details>
+      <summary>فحص التثبيت</summary>
+      <div class="acts"><button class="btn o" id="dg">افحص الآن</button></div>
+      <pre id="dgo" style="white-space:pre-wrap;font:inherit;line-height:1.9;margin-top:8px"></pre>
+    </details>
+    <details>
+      <summary>طريقة التثبيت</summary>
+      <p style="margin-top:8px;line-height:1.7">
+        <b>كمبيوتر (Chrome/Edge):</b> زر «تثبيت التطبيق» أو أيقونة التثبيت في شريط العنوان.<br>
+        <b>ماك (Safari):</b> ملف ← إضافة إلى Dock.<br>
+        <b>آيفون:</b> مشاركة ← إضافة إلى الشاشة الرئيسية.<br>
+        <b>أندرويد:</b> القائمة ← تثبيت التطبيق / إضافة إلى الشاشة الرئيسية.<br>
+        يعمل بعدها بدون إنترنت تمامًا.
+      </p>
+    </details>
+  </div>`;
+}
+
+async function diag() {
+  const L = [], ok = (c, t) => L.push((c ? '✅ ' : '❌ ') + t);
+  ok(window.isSecureContext, 'اتصال آمن: ' + location.protocol + '//' + (location.hostname || 'ملف محلي'));
+  if (location.protocol === 'file:') L.push('⚠️ الملف مفتوح مباشرة من الجهاز والتثبيت لا يعمل هكذا. ارفعه على رابط https أو شغّل خادم محلي.');
+  ok('serviceWorker' in navigator, 'المتصفح يدعم العمل بدون إنترنت');
+  try {
+    ok(!!await navigator.serviceWorker.getRegistration(), 'تسجيل sw.js');
+    ok(!!navigator.serviceWorker.controller, 'sw.js يتحكم بالصفحة (أعد فتح الصفحة مرة إن ظهرت ❌)');
+  } catch (e) { ok(false, 'sw.js'); }
+  try {
+    const m = await fetch('manifest.webmanifest');
+    const j = await m.json();
+    ok(m.ok, 'manifest: ' + j.name);
+  } catch (e) { ok(false, 'تعذر قراءة manifest.webmanifest'); }
+  try { ok((await fetch('icons/icon-512.png')).ok, 'الأيقونة 512'); } catch (e) { ok(false, 'الأيقونة 512'); }
+  ok(!!dip, 'المتصفح جاهز لعرض التثبيت (لا يظهر إن كان مثبتاً من قبل)');
+  ok(matchMedia('(display-mode: standalone)').matches, 'يعمل الآن كتطبيق مثبّت');
+  return L.join('\n');
+}
+
+function render() {
+  $('#trips').innerHTML = [1, 2, 3].map(t =>
+    `<button class="chip" aria-pressed="${t === trip}" data-t="${t}">رحلة ${t}</button>`
+  ).join('');
+  $('#nav').innerHTML = [
+    ['rep', 'التقارير'],
+    ['trip', 'بيانات الرحلة'],
+    ['tbl', 'الجدول'],
+    ['shift', 'ترحيل ونسخ']
+  ].map(([k, n]) =>
+    `<button class="chip" aria-pressed="${view === k}" data-v="${k}">${n}</button>`
+  ).join('');
+  $('#out').innerHTML = { rep: vRep, trip: vTrip, tbl: vTbl, shift: vShift }[view]();
+}
+
+/* ========== Edit dialog ========== */
+function openEdit(id) {
+  editId = id;
+  const x = rows.find(r => r.id === id) || { t: trip, d: TODAY, r: TODAY + 19 };
+  $('#dt').textContent = id ? 'تعديل رحلة' : 'إضافة رحلة';
+  $('#et').value = x.t;
+  $('#ed').value = iso(x.d);
+  $('#er').value = iso(x.r);
+  $('#eerr').textContent = '';
+  $('#edel').hidden = !id;
+  $('#dlg').showModal();
+}
+$('#ecancel').onclick = () => $('#dlg').close();
+$('#esave').onclick = () => {
+  const t = +$('#et').value;
+  const d = fromIso($('#ed').value || 'x-0-0');
+  const r = fromIso($('#er').value || 'x-0-0');
+  if (!(d > 0 && r > 0) || r < d) {
+    $('#eerr').textContent = 'تاريخ العودة يجب أن يكون بعد الذهاب.';
+    return;
+  }
+  snap();
+  if (editId) Object.assign(rows.find(x => x.id === editId), { t, d, r });
+  else rows.push({ id: Math.max(0, ...rows.map(x => x.id)) + 1, t, d, r });
+  save();
+  $('#dlg').close();
+  render();
+  toast('تم الحفظ');
+};
+$('#edel').onclick = () => {
+  if (confirm('حذف هذه الرحلة؟')) {
+    snap();
+    rows = rows.filter(x => x.id !== editId);
+    save();
+    $('#dlg').close();
+    render();
+  }
+};
+
+/* ========== Import helpers ========== */
+function parseDate(val) {
+  if (val == null || val === '') return null;
+  if (typeof val === 'number') {
+    // Excel serial date
+    const epoch = new Date(Date.UTC(1899, 11, 30));
+    const d = new Date(epoch.getTime() + val * 86400000);
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 864e5;
+  }
+  const s = String(val).trim();
+  // try ISO
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return fromIso(s.slice(0, 10));
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m) return P(m[1] + '/' + m[2] + '/' + m[3]);
+  // MM/DD/YYYY (US)
+  const m2 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  return null;
+}
+
+function importRows(arr) {
+  if (!Array.isArray(arr) || !arr.length) throw new Error('empty');
+  const parsed = arr.map((x, i) => {
+    let t, d, r;
+    if (Array.isArray(x)) {
+      t = +x[0]; d = parseDate(x[1]); r = parseDate(x[2]);
+    } else {
+      t = +(x.t || x.trip || x['رقم الرحلة'] || x.رقم_الرحلة);
+      d = parseDate(x.d || x.dep || x.departure || x['رحلة ذهاب'] || x['رحلة ذهاب '] || x.ذهاب);
+      r = parseDate(x.r || x.ret || x.return || x['رحلة عودة'] || x.عودة);
+    }
+    if (!t || !d || !r || r < d) return null;
+    return { id: i + 1, t, d, r };
+  }).filter(Boolean);
+  if (!parsed.length) throw new Error('no valid rows');
+  snap();
+  rows = parsed;
+  save();
+  render();
+  toast('تم استيراد ' + parsed.length + ' رحلة');
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const name = (file.name || '').toLowerCase();
+  if (name.endsWith('.json')) {
+    file.text().then(t => {
+      try {
+        const s = JSON.parse(t);
+        importRows(s);
+      } catch (_) { toast('ملف JSON غير صالح'); }
+    });
+  } else if (name.endsWith('.csv') || name.endsWith('.txt')) {
+    file.text().then(t => {
+      try {
+        const lines = t.trim().split(/\r?\n/);
+        const data = lines.slice(1).map(line => {
+          // simple CSV split (handles quoted)
+          const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+          return cols;
+        });
+        importRows(data);
+      } catch (_) { toast('ملف CSV غير صالح'); }
+    });
+  } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    // Use SheetJS if available, otherwise instruct user
+    if (typeof XLSX !== 'undefined') {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+          // skip header
+          importRows(json.slice(1));
+        } catch (err) {
+          toast('تعذر قراءة ملف Excel');
+          console.error(err);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      toast('لقراءة Excel مباشرة، صدّر الملف كـ CSV أو JSON أولاً، أو استخدم النسخة الاحتياطية JSON');
+    }
+  } else {
+    toast('صيغة غير مدعومة. استخدم JSON أو CSV');
+  }
+}
+
+/* ========== Event listeners ========== */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const d = b.dataset;
+  if (d.t) { trip = +d.t; save(); render(); }
+  else if (d.v) { view = d.v; render(); }
+  else if (d.k) { cur = d.k === 'tot' ? 'tot' : +d.k; render(); }
+  else if (d.f) { flt = d.f; render(); }
+  else if (d.inc) { incl = !incl; render(); }
+  else if (d.e !== undefined) openEdit(+d.e);
+  else if (b.id === 'apply') {
+    const p = plan();
+    snap();
+    p.forEach(q => { q.x.d = q.d; q.x.r = q.r; });
+    save();
+    render();
+    toast('تم ترحيل ' + p.length + ' رحلة');
+  } else if (b.id === 'undo') {
+    rows = JSON.parse(hist.pop());
+    save();
+    render();
+    toast('تم التراجع');
+  } else if (b.id === 'ext') {
+    const I = info(trip);
+    const l = I.rs[I.rs.length - 1];
+    const nd = l.r + REST + 1;
+    snap();
+    rows.push({ id: Math.max(0, ...rows.map(x => x.id)) + 1, t: trip, d: nd, r: nd + (l.r - l.d) });
+    save();
+    render();
+    toast('أضيفت دورة جديدة');
+  } else if (b.id === 'rst') {
+    if (confirm('سيتم مسح كل التعديلات واسترجاع الجدول الأصلي. متأكد؟')) {
+      snap();
+      reset();
+      save();
+      render();
+      toast('تم استرجاع الجدول الأصلي');
+    }
+  } else if (b.id === 'exp') {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' }));
+    a.download = 'trips-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    toast('تم التصدير');
+  } else if (b.id === 'expCsv') {
+    const header = 'رقم الرحلة,رحلة ذهاب,رحلة عودة\n';
+    const body = rows.map(x => `${x.t},${f2(x.d)},${f2(x.r)}`).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\uFEFF' + header + body], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'trips-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    toast('تم تصدير CSV');
+  } else if (b.id === 'cp') {
+    copyTxt($('#rp').textContent).then(() => toast('تم نسخ التقرير'), () => toast('تعذر النسخ، حدد النص يدوياً'));
+  } else if (b.id === 'shr') {
+    const t = $('#rp').textContent;
+    if (navigator.share) navigator.share({ text: t }).catch(() => {});
+    else window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+  } else if (b.id === 'dg') {
+    diag().then(t => $('#dgo').textContent = t);
+  }
+});
+
+document.addEventListener('change', e => {
+  const i = e.target.id;
+  if (!i || i[0] !== 's' || i[1] !== '-') return;
+  sh.scope = $('#s-sc').value;
+  sh.from = $('#s-fr').value || sh.from;
+  sh.n = Math.max(1, +$('#s-n').value || 1);
+  sh.dir = +$('#s-dr').value;
+  render();
+});
+
+// Dropzone (delegated after render)
+document.addEventListener('click', e => {
+  if (e.target.closest('#dz')) $('#imp').click();
+});
+document.addEventListener('dragover', e => {
+  if (e.target.closest('#dz')) { e.preventDefault(); e.target.closest('#dz').classList.add('drag'); }
+});
+document.addEventListener('dragleave', e => {
+  if (e.target.closest('#dz')) e.target.closest('#dz').classList.remove('drag');
+});
+document.addEventListener('drop', e => {
+  const dz = e.target.closest('#dz');
+  if (!dz) return;
+  e.preventDefault();
+  dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+$('#imp').onchange = e => {
+  const f = e.target.files[0];
+  if (f) handleFile(f);
+  e.target.value = '';
+};
+
+/* ========== PWA ========== */
+let dip;
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  dip = e;
+  $('#inst').hidden = false;
+});
+addEventListener('appinstalled', () => { $('#inst').hidden = true; dip = null; });
+$('#inst').onclick = () => {
+  if (dip) { dip.prompt(); dip = null; $('#inst').hidden = true; }
+};
+
+function updateOnline() {
+  const b = $('#offb');
+  if (!navigator.onLine) { b.hidden = false; }
+  else b.hidden = true;
+}
+addEventListener('online', updateOnline);
+addEventListener('offline', updateOnline);
+updateOnline();
+
+if ('serviceWorker' in navigator && (location.protocol.startsWith('http') || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+load();
+render();
+</script>
+</body>
+</html>
